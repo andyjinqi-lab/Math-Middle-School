@@ -93,6 +93,13 @@ async function initPostgres() {
       updated_at BIGINT
     );
   `)
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS id TEXT;')
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;')
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;')
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;')
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at BIGINT;')
+  await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at BIGINT;')
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(email);')
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS password_resets (
