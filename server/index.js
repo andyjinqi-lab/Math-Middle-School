@@ -53,6 +53,36 @@ function writeJson(filePath, value) {
 
 async function initPostgres() {
   if (!pool) return
+
+  async function getColumnType(tableName, columnName) {
+    const { rows } = await pool.query(
+      `SELECT data_type
+       FROM information_schema.columns
+       WHERE table_schema='public' AND table_name=$1 AND column_name=$2
+       LIMIT 1`,
+      [tableName, columnName],
+    )
+    return rows[0]?.data_type || null
+  }
+
+  async function ensureBigintTimeColumn(tableName, columnName) {
+    const dataType = await getColumnType(tableName, columnName)
+    if (!dataType || dataType === 'bigint') return
+
+    if (dataType === 'timestamp without time zone' || dataType === 'timestamp with time zone' || dataType === 'date') {
+      await pool.query(
+        `ALTER TABLE ${tableName}
+         ALTER COLUMN ${columnName} TYPE BIGINT
+         USING (
+           CASE
+             WHEN ${columnName} IS NULL THEN NULL
+             ELSE (EXTRACT(EPOCH FROM ${columnName}) * 1000)::BIGINT
+           END
+         )`,
+      )
+    }
+  }
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -84,6 +114,9 @@ async function initPostgres() {
   await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS created_at BIGINT;')
   await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS used_at BIGINT;')
   await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_password_resets_token_unique ON password_resets(token);')
+  await ensureBigintTimeColumn('password_resets', 'expires_at')
+  await ensureBigintTimeColumn('password_resets', 'created_at')
+  await ensureBigintTimeColumn('password_resets', 'used_at')
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS attempts (
@@ -110,6 +143,11 @@ async function initPostgres() {
   await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS difficulty TEXT;')
   await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS ts BIGINT;')
   await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS created_at BIGINT;')
+  await ensureBigintTimeColumn('attempts', 'ts')
+  await ensureBigintTimeColumn('attempts', 'created_at')
+
+  await ensureBigintTimeColumn('users', 'created_at')
+  await ensureBigintTimeColumn('users', 'updated_at')
 
   await pool.query('CREATE INDEX IF NOT EXISTS idx_attempts_user_ts ON attempts(user_id, ts DESC);')
 }
