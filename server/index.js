@@ -99,6 +99,7 @@ async function initPostgres() {
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;')
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at BIGINT;')
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at BIGINT;')
+  await pool.query('ALTER TABLE users ALTER COLUMN updated_at DROP NOT NULL;')
   await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(email);')
 
   await pool.query(`
@@ -212,13 +213,14 @@ async function createUser({ email, passwordHash, displayName }) {
     passwordHash,
     displayName: displayName || '学员',
     createdAt: Date.now(),
+    updatedAt: Date.now(),
   }
 
   if (storageMode === 'postgresql') {
     await pool.query(
-      `INSERT INTO users(id, email, password_hash, display_name, created_at)
-       VALUES($1, $2, $3, $4, $5)`,
-      [user.id, user.email, user.passwordHash, user.displayName, user.createdAt],
+      `INSERT INTO users(id, email, password_hash, display_name, created_at, updated_at)
+       VALUES($1, $2, $3, $4, $5, $6)`,
+      [user.id, user.email, user.passwordHash, user.displayName, user.createdAt, user.updatedAt],
     )
     return user
   }
