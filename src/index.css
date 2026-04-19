@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  color: #24324a;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(167, 139, 250, 0.12), transparent 42%),
+    radial-gradient(circle at 85% 30%, rgba(53, 201, 165, 0.14), transparent 36%),
+    linear-gradient(180deg, #f8fbff 0%, #f7f9fc 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.math-grid {
+  background-image:
+    linear-gradient(rgba(79, 125, 243, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 125, 243, 0.05) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
