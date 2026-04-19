@@ -76,6 +76,14 @@ async function initPostgres() {
       used_at BIGINT
     );
   `)
+  await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS user_id TEXT;')
+  await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS email TEXT;')
+  await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS token TEXT;')
+  await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS used BOOLEAN NOT NULL DEFAULT FALSE;')
+  await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS expires_at BIGINT;')
+  await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS created_at BIGINT;')
+  await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS used_at BIGINT;')
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_password_resets_token_unique ON password_resets(token);')
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS attempts (
@@ -92,6 +100,16 @@ async function initPostgres() {
       created_at BIGINT NOT NULL
     );
   `)
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS user_id TEXT;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS question_id TEXT;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS textbook_id TEXT;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS chapter_id TEXT;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS correct BOOLEAN NOT NULL DEFAULT FALSE;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS selected TEXT;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS answer TEXT;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS difficulty TEXT;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS ts BIGINT;')
+  await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS created_at BIGINT;')
 
   await pool.query('CREATE INDEX IF NOT EXISTS idx_attempts_user_ts ON attempts(user_id, ts DESC);')
 }
