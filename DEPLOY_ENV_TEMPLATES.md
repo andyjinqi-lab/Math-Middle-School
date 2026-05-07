@@ -45,6 +45,7 @@ VITE_API_BASE_URL=https://<你的正式 API 域名>
 ```text
 Build command: npm run build
 Output / Publish directory: dist
+Root directory: 留空（本仓库根目录就是前端项目）
 ```
 
 ## DNS
