@@ -30,7 +30,8 @@ export default function AuthPage({ onAuthSubmit, onRequestReset, onResetByToken,
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
-  async function handleAuthSubmit() {
+  async function handleAuthSubmit(event) {
+    event?.preventDefault()
     if (!form.email || !form.password) return
     if (mode === 'register' && form.password !== form.confirmPassword) {
       setMessage('两次密码不一致，请检查。')
@@ -115,7 +116,8 @@ export default function AuthPage({ onAuthSubmit, onRequestReset, onResetByToken,
           </button>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <form className="mt-6" onSubmit={handleAuthSubmit}>
+          <div className="grid gap-4 md:grid-cols-2">
           {mode !== 'reset' ? (
             <label className="text-sm text-textSub md:col-span-2">
               邮箱
@@ -124,6 +126,7 @@ export default function AuthPage({ onAuthSubmit, onRequestReset, onResetByToken,
                 value={form.email}
                 onChange={(e) => setField('email', e.target.value)}
                 placeholder="例如：student@demo.com"
+                autoComplete="email"
                 className="mt-1 w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm text-textMain"
               />
             </label>
@@ -137,6 +140,7 @@ export default function AuthPage({ onAuthSubmit, onRequestReset, onResetByToken,
                 value={form.password}
                 onChange={(e) => setField('password', e.target.value)}
                 placeholder="请输入密码"
+                autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                 className="mt-1 w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm text-textMain"
               />
             </label>
@@ -151,6 +155,7 @@ export default function AuthPage({ onAuthSubmit, onRequestReset, onResetByToken,
                   value={form.confirmPassword}
                   onChange={(e) => setField('confirmPassword', e.target.value)}
                   placeholder="请再次输入密码"
+                  autoComplete="new-password"
                   className="mt-1 w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm text-textMain"
                 />
               </label>
@@ -160,6 +165,7 @@ export default function AuthPage({ onAuthSubmit, onRequestReset, onResetByToken,
                   value={form.displayName}
                   onChange={(e) => setField('displayName', e.target.value)}
                   placeholder="例如：小明"
+                  autoComplete="nickname"
                   className="mt-1 w-full rounded-xl border border-primary/20 bg-white px-3 py-2 text-sm text-textMain"
                 />
               </label>
@@ -190,31 +196,32 @@ export default function AuthPage({ onAuthSubmit, onRequestReset, onResetByToken,
               </label>
             </>
           ) : null}
-        </div>
+          </div>
 
-        {(errorMsg || message) ? (
-          <p className={`mt-4 text-sm ${errorMsg ? 'text-error' : 'text-textSub'}`}>{errorMsg || message}</p>
-        ) : null}
-
-        <div className="mt-6 flex flex-wrap gap-2">
-          {(mode === 'login' || mode === 'register') ? (
-            <Button onClick={handleAuthSubmit} className="disabled:opacity-60" disabled={loading}>
-              {loading ? '处理中...' : mode === 'register' ? '注册并进入' : '登录进入'}
-            </Button>
+          {(errorMsg || message) ? (
+            <p className={`mt-4 text-sm ${errorMsg ? 'text-error' : 'text-textSub'}`}>{errorMsg || message}</p>
           ) : null}
 
-          {mode === 'forgot' ? (
-            <Button onClick={handleRequestReset} className="disabled:opacity-60" disabled={loading}>
-              {loading ? '发送中...' : '发送重置链接'}
-            </Button>
-          ) : null}
+          <div className="mt-6 flex flex-wrap gap-2">
+            {(mode === 'login' || mode === 'register') ? (
+              <Button type="submit" className="disabled:opacity-60" disabled={loading}>
+                {loading ? '处理中...' : mode === 'register' ? '注册并进入' : '登录进入'}
+              </Button>
+            ) : null}
 
-          {mode === 'reset' ? (
-            <Button onClick={handleResetByToken} className="disabled:opacity-60" disabled={loading}>
-              {loading ? '重置中...' : '确认重置密码'}
-            </Button>
-          ) : null}
-        </div>
+            {mode === 'forgot' ? (
+              <Button type="button" onClick={handleRequestReset} className="disabled:opacity-60" disabled={loading}>
+                {loading ? '发送中...' : '发送重置链接'}
+              </Button>
+            ) : null}
+
+            {mode === 'reset' ? (
+              <Button type="button" onClick={handleResetByToken} className="disabled:opacity-60" disabled={loading}>
+                {loading ? '重置中...' : '确认重置密码'}
+              </Button>
+            ) : null}
+          </div>
+        </form>
       </Card>
     </div>
   )
