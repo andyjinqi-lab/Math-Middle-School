@@ -1,4 +1,4 @@
-const TEXTBOOK_KEY = 'math_planet_textbooks_v1'
+const TEXTBOOK_KEY = 'math_planet_textbooks_v2'
 
 function safeParse(value, fallback) {
   try {

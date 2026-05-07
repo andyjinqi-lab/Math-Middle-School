@@ -1,8 +1,10 @@
-export default function ProgressBar({ value }) {
+import { cn } from '../../lib/utils'
+
+export default function ProgressBar({ value, className, barClassName }) {
   return (
-    <div className="h-2.5 overflow-hidden rounded-full bg-primary/10">
+    <div className={cn('h-2.5 overflow-hidden rounded-full bg-primary/10', className)}>
       <div
-        className="h-full rounded-full bg-gradient-to-r from-primary to-purple transition-all duration-500"
+        className={cn('h-full rounded-full bg-gradient-to-r from-primary to-purple transition-all duration-500', barClassName)}
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
       />
     </div>

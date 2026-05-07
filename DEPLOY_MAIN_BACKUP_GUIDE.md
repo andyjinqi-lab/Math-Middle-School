@@ -3,7 +3,7 @@
 ## 目标（与你的原始需求一致）
 
 - 域名：`afinance.site`
-- 最终主站：`cap.afinance.site`（备案通过后启用）
+- 最终主站：`math.afinance.site`（备案通过后启用）
 - 备案未通过期间：走海外备站（Cloudflare / Netlify）
 - **无论前端落在主站还是备站，用户注册/登录/学习数据必须一致，不受切站影响**
 
@@ -30,7 +30,7 @@
   - 入口可为 `xxx.pages.dev`（Cloudflare）
   - 可同时保留 Netlify 备份入口
 - 备案后：
-  - `cap.afinance.site` CNAME 到 Cloudflare Pages（或你最终主站平台）
+  - `math.afinance.site` CNAME 到 Cloudflare Pages（或你最终主站平台）
 
 > 前端只是“壳”，切前端域名不影响数据，只要 API 与数据库不变。
 
@@ -62,12 +62,12 @@ VITE_API_BACKUP_BASE_URL=https://<备API域名>
 3. API 层连统一 PostgreSQL
 4. 开放 CORS 白名单包含：
    - 备案前前端域名（pages.dev / netlify.app）
-   - 将来的 `https://cap.afinance.site`
+   - 将来的 `https://math.afinance.site`
 
 ### 阶段 B：备案通过后
 
-1. 只改 DNS：让 `cap.afinance.site` 指向现有前端发布平台
-2. 前端重新发版（若需要）并把主访问入口切到 `cap.afinance.site`
+1. 只改 DNS：让 `math.afinance.site` 指向现有前端发布平台
+2. 前端重新发版（若需要）并把主访问入口切到 `math.afinance.site`
 3. API 和数据库不迁移（保持原样）
 
 结果：用户账号、密码、错题记录、学习数据全部延续。
@@ -100,7 +100,7 @@ VITE_API_BACKUP_BASE_URL=https://api-backup.afinance.site
 
 ```text
 PORT=3001
-APP_ORIGIN=https://cap.afinance.site,https://<pages.dev域名>,https://<netlify域名>
+APP_ORIGIN=https://math.afinance.site,https://<pages.dev域名>,https://<netlify域名>
 JWT_SECRET=<同一套强随机密钥>
 RESEND_API_KEY=<你的resend key>
 MAIL_FROM=<已验证发件地址>

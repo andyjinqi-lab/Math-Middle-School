@@ -12,6 +12,20 @@ dist
 dist-ssr
 *.local
 
+# OCR/import working files
+__pycache__/
+*.pyc
+ocr_stage/
+tessdata/
+tmp/
+tmp_ocr/
+tmp_pdf_list.json
+*.traineddata
+
+# Generated OCR assets kept out of normal deploys unless explicitly published
+public/ocr_pages/
+public/ocr_questions/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

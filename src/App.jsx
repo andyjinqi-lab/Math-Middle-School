@@ -1,12 +1,16 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
-import Navbar from './components/layout/Navbar'
+import AppShell from './components/layout/AppShell'
 import HomePage from './pages/HomePage'
 import PracticePage from './pages/PracticePage'
 import WrongBookPage from './pages/WrongBookPage'
 import GrowthPage from './pages/GrowthPage'
 import ParentPage from './pages/ParentPage'
 import AuthPage from './pages/AuthPage'
+import TransferPracticePage from './pages/TransferPracticePage'
 import { curatedQuestions, textbooks } from './data/questionBank'
+import ocrReviewedQuestions from './data/ocrReviewedQuestions.json'
+import pdfWorkbookQuestions from './data/pdfWorkbookQuestions.json'
+import xslRuleQuestions from './data/xslRuleQuestions.json'
 import {
   calcChapterStats,
   calcSummary,
@@ -25,17 +29,93 @@ import {
   resetPasswordByToken,
 } from './lib/authApi'
 
+const CHAPTER_DISPLAY_NAME_MAP = {
+  '6a-c1': '第1章 有理数初步',
+  '6a-c2': '第2章 整式初步',
+  '6a-c3': '第3章 一元一次方程入门',
+  '6a-c4': '第4章 几何图形初步',
+  '6a-c5': '第5章 分数与小数运算',
+  '6a-c6': '第6章 比与比例基础',
+  '6a-c7': '第7章 简单统计图表',
+  '6a-c8': '第8章 应用题建模入门',
+  '6b-c1': '第1章 分数与比例',
+  '6b-c2': '第2章 线段与角',
+  '6b-c3': '第3章 数据处理初步',
+  '6b-c4': '第4章 综合应用',
+  '6b-c5': '第5章 方程应用题',
+  '6b-c6': '第6章 平面图形面积',
+  '6b-c7': '第7章 立体图形初步',
+  '6b-c8': '第8章 概率直观感知',
+  '7a-c1': '第9章 整式与因式分解',
+  '7a-c2': '第10章 第5节 可化为一元一次方程的分式方程',
+  '7a-c3': '第11章 图形的运动',
+  '7a-c4': '第9章 整式运算专项',
+  '7a-c5': '第10章 第1-2节 分式的意义与性质',
+  '7a-c6': '第10章 第3-4节 分式的运算',
+  '7a-c7': '第10章 第6节 整数指数幂及其运算',
+  '7a-c8': '本册综合（第9-11章）',
+  '7b-c1': '第1章 不等式与不等式组',
+  '7b-c2': '第2章 二元一次方程组',
+  '7b-c3': '第3章 统计与概率初步',
+  '7b-c4': '第4章 几何证明初步',
+  '7b-c5': '第5章 整式乘法与因式分解',
+  '7b-c6': '第6章 平面直角坐标系',
+  '7b-c7': '第7章 三角形基础',
+  '7b-c8': '第8章 章节综合训练',
+  '8a-c1': '第1章 一次函数',
+  '8a-c2': '第2章 全等三角形',
+  '8a-c3': '第3章 因式分解',
+  '8a-c4': '第4章 数据分析',
+  '8a-c5': '第5章 轴对称与中心对称',
+  '8a-c6': '第6章 实数与根式',
+  '8a-c7': '第7章 函数图像综合',
+  '8a-c8': '第8章 章节综合训练',
+  '8b-c1': '第1章 分式',
+  '8b-c2': '第2章 勾股定理',
+  '8b-c3': '第3章 平行四边形',
+  '8b-c4': '第4章 概率模型',
+  '8b-c5': '第5章 一次函数与方程不等式',
+  '8b-c6': '第6章 图形平移与旋转',
+  '8b-c7': '第7章 数据抽样与估计',
+  '8b-c8': '第8章 章节综合训练',
+  '9a-c1': '第1章 二次函数',
+  '9a-c2': '第2章 相似三角形',
+  '9a-c3': '第3章 圆',
+  '9a-c4': '第4章 综合建模',
+  '9a-c5': '第5章 一元二次方程',
+  '9a-c6': '第6章 二次函数最值与应用',
+  '9a-c7': '第7章 圆与直线位置关系',
+  '9a-c8': '第8章 章节综合训练',
+  '9b-c1': '第1章 锐角三角函数',
+  '9b-c2': '第2章 统计与概率进阶',
+  '9b-c3': '第3章 中考综合训练',
+  '9b-c4': '第4章 压轴题策略',
+  '9b-c5': '第5章 图形变换综合',
+  '9b-c6': '第6章 函数与几何综合',
+  '9b-c7': '第7章 代数几何压轴',
+  '9b-c8': '第8章 中考真题演练',
+}
+
+const DISPLAY_TEXTBOOKS = textbooks.map((book) => ({
+  ...book,
+  chapters: book.chapters.map((chapter) => ({
+    ...chapter,
+    name: CHAPTER_DISPLAY_NAME_MAP[chapter.id] ?? chapter.name,
+  })),
+}))
+
 function App() {
   const [session, setSession] = useState(() => loadSession())
   const [page, setPage] = useState('home')
   const [attempts, setAttempts] = useState([])
   const [attemptError, setAttemptError] = useState('')
+  const [appNotice, setAppNotice] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState('')
 
   const [selection, setSelection] = useState({
-    textbookId: textbooks[2]?.id ?? textbooks[0]?.id,
-    chapterId: textbooks[2]?.chapters?.[0]?.id ?? textbooks[0]?.chapters?.[0]?.id,
+    textbookId: DISPLAY_TEXTBOOKS[2]?.id ?? DISPLAY_TEXTBOOKS[0]?.id,
+    chapterId: DISPLAY_TEXTBOOKS[2]?.chapters?.[0]?.id ?? DISPLAY_TEXTBOOKS[0]?.chapters?.[0]?.id,
     difficulty: '提升',
     source: '全部',
     questionCount: 10,
@@ -43,16 +123,20 @@ function App() {
 
   const user = session?.user ?? null
 
-  const generatedQuestions = useMemo(() => buildGeneratedQuestions(textbooks, 100), [])
+  const generatedQuestions = useMemo(() => buildGeneratedQuestions(DISPLAY_TEXTBOOKS, 100), [])
   const questions = useMemo(
-    () => mergeQuestionBank(curatedQuestions, generatedQuestions),
+    () =>
+      mergeQuestionBank(
+        [...curatedQuestions, ...ocrReviewedQuestions, ...pdfWorkbookQuestions, ...xslRuleQuestions],
+        generatedQuestions,
+      ),
     [generatedQuestions],
   )
 
   const summary = useMemo(() => calcSummary(attempts), [attempts])
   const trendData = useMemo(() => calcTrend(attempts, 7), [attempts])
   const chapterStatsAll = useMemo(
-    () => calcChapterStats(textbooks, questions, attempts),
+    () => calcChapterStats(DISPLAY_TEXTBOOKS, questions, attempts),
     [questions, attempts],
   )
   const chapterStatsBySelectedTextbook = useMemo(
@@ -68,7 +152,7 @@ function App() {
 
   const chapterNameMap = useMemo(() => {
     const map = {}
-    textbooks.forEach((book) => {
+    DISPLAY_TEXTBOOKS.forEach((book) => {
       book.chapters.forEach((chapter) => {
         map[chapter.id] = chapter.name
       })
@@ -212,6 +296,16 @@ function App() {
     setPage('practice')
   }
 
+  function handleSearchEntry() {
+    setAppNotice('已进入练习页：可通过教材、章节、难度和来源筛选知识点 / 题型 / 错题。')
+    setPage('practice')
+  }
+
+  function handleNotifyEntry() {
+    setAppNotice('今日提醒：建议先完成同步练习，再处理错题本中的高频错题。')
+    setPage('home')
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-bg/70 px-4 md:px-6">
@@ -228,6 +322,14 @@ function App() {
 
   const withAttemptBanner = (node) => (
     <div className="space-y-3">
+      {appNotice ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-softBlue px-4 py-2 text-sm font-semibold text-primary">
+          <span>{appNotice}</span>
+          <button type="button" className="text-xs font-black text-primaryHover" onClick={() => setAppNotice('')}>
+            知道了
+          </button>
+        </div>
+      ) : null}
       {attemptError ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
           记录服务提示：{attemptError}
@@ -252,7 +354,7 @@ function App() {
     if (page === 'practice') {
       return withAttemptBanner(
         <PracticePage
-          textbooks={textbooks}
+          textbooks={DISPLAY_TEXTBOOKS}
           questions={questions}
           selection={selection}
           setSelection={setSelection}
@@ -274,6 +376,12 @@ function App() {
       )
     }
 
+    if (page === 'transfer') {
+      return withAttemptBanner(
+        <TransferPracticePage questions={questions} onStartPractice={() => setPage('practice')} />,
+      )
+    }
+
     if (page === 'growth') {
       return withAttemptBanner(
         <GrowthPage
@@ -290,10 +398,10 @@ function App() {
         summary={summary}
         trendData={trendData}
         chapterStats={chapterStatsBySelectedTextbook}
-        textbooks={textbooks}
+        textbooks={DISPLAY_TEXTBOOKS}
         selectedTextbookId={selection.textbookId}
         onSelectTextbook={(textbookId) => {
-          const nextBook = textbooks.find((item) => item.id === textbookId)
+          const nextBook = DISPLAY_TEXTBOOKS.find((item) => item.id === textbookId)
           if (!nextBook) return
           setSelection((prev) => ({
             ...prev,
@@ -301,15 +409,25 @@ function App() {
             chapterId: nextBook.chapters[0]?.id ?? prev.chapterId,
           }))
         }}
+        onStartPractice={() => setPage('practice')}
+        onOpenWrongBook={() => setPage('wrong')}
+        onOpenTransfer={() => setPage('transfer')}
+        onOpenGrowth={() => setPage('growth')}
       />,
     )
   })()
 
   return (
-    <div className="min-h-screen bg-bg/70">
-      <Navbar page={page} onSwitchPage={setPage} user={user} onLogout={handleLogout} />
-      <main className="mx-auto w-full max-w-7xl px-4 py-5 md:px-6 md:py-6">{currentPage}</main>
-    </div>
+    <AppShell
+      page={page}
+      onSwitchPage={setPage}
+      user={user}
+      onLogout={handleLogout}
+      onSearchClick={handleSearchEntry}
+      onNotifyClick={handleNotifyEntry}
+    >
+      {currentPage}
+    </AppShell>
   )
 }
 

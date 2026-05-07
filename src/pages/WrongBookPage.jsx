@@ -4,6 +4,7 @@ import Button from '../components/ui/Button'
 import Tag from '../components/ui/Tag'
 import Badge from '../components/ui/Badge'
 import { useMemo, useState } from 'react'
+import { formatMathDisplay } from '../lib/mathTextFormat'
 
 const filters = ['全部', '按章节', '按错误次数', '按最近时间']
 
@@ -18,9 +19,9 @@ function getCorrectAnswerDisplay(question) {
   const isChoice = question.questionType === 'choice' || Array.isArray(question.options)
   if (isChoice) {
     const raw = question.options?.[question.answer] ?? ''
-    return `${raw}`.replace(/^[A-D]\.\s*/, '') || '暂无正确答案'
+    return formatMathDisplay(`${raw}`.replace(/^[A-D]\.\s*/, '')) || '暂无正确答案'
   }
-  return `${question.answer ?? '暂无正确答案'}`
+  return formatMathDisplay(question.answer ?? '暂无正确答案')
 }
 
 export default function WrongBookPage({ wrongQuestions, chapterNameMap, questionMap, onPracticeWrong }) {
@@ -89,7 +90,7 @@ export default function WrongBookPage({ wrongQuestions, chapterNameMap, question
               <Card key={item.id}>
                 <div className="flex flex-wrap items-start gap-3">
                   <div className="min-w-0 flex-1 space-y-2">
-                    <p className="truncate text-base font-semibold text-textMain">{item.title}</p>
+                    <p className="truncate text-base font-semibold text-textMain">{formatMathDisplay(item.title)}</p>
                     <div className="flex flex-wrap gap-2">
                       <Badge tone="blue">{chapterNameMap[item.chapterId] ?? item.chapterId}</Badge>
                       <Badge tone={item.count > 3 ? 'red' : 'orange'}>错误 {item.count} 次</Badge>
@@ -101,7 +102,7 @@ export default function WrongBookPage({ wrongQuestions, chapterNameMap, question
                     </p>
                     <p className="text-sm text-textSub">
                       <span className="font-semibold text-textMain">解题过程：</span>
-                      {question?.explanation ?? '暂未提供解析。'}
+                      {formatMathDisplay(question?.explanation ?? '暂未提供解析。')}
                     </p>
                   </div>
 

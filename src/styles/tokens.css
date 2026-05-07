@@ -1,0 +1,36 @@
+:root {
+  --color-primary: #5B6CFF;
+  --color-primary-hover: #4858E8;
+  --color-secondary: #7C5CFF;
+  --color-cyan: #22C7D8;
+  --color-green: #34D399;
+  --color-orange: #FFB020;
+  --color-red: #FF5C7A;
+
+  --color-page-bg: #F5F8FF;
+  --color-surface: #FFFFFF;
+  --color-surface-soft: #F8FAFF;
+  --color-soft-blue: #EEF4FF;
+  --color-soft-purple: #F2EEFF;
+  --color-dark-panel: #08122B;
+
+  --color-text-main: #17233C;
+  --color-text-secondary: #61708A;
+  --color-text-muted: #94A3B8;
+  --color-text-inverse: #FFFFFF;
+
+  --color-border-light: rgba(148, 163, 184, 0.22);
+  --color-border-primary: rgba(91, 108, 255, 0.28);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  --shadow-card: 0 12px 30px rgba(43, 83, 180, 0.08);
+  --shadow-hover: 0 18px 44px rgba(43, 83, 180, 0.14);
+  --shadow-panel: 0 24px 60px rgba(15, 23, 42, 0.12);
+
+  --font-sans: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+}

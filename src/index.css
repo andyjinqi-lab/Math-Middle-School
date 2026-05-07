@@ -1,3 +1,5 @@
+@import './styles/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,12 +10,12 @@
 
 body {
   margin: 0;
-  font-family: Inter, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  color: #24324a;
+  font-family: var(--font-sans);
+  color: var(--color-text-main);
   background:
-    radial-gradient(circle at 10% 0%, rgba(167, 139, 250, 0.12), transparent 42%),
-    radial-gradient(circle at 85% 30%, rgba(53, 201, 165, 0.14), transparent 36%),
-    linear-gradient(180deg, #f8fbff 0%, #f7f9fc 100%);
+    radial-gradient(circle at 18% 8%, rgba(124, 92, 255, 0.10), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(34, 199, 216, 0.12), transparent 26%),
+    linear-gradient(180deg, var(--color-page-bg) 0%, #f8fbff 48%, var(--color-soft-blue) 100%);
 }
 
 #root {
@@ -22,7 +24,15 @@ body {
 
 .math-grid {
   background-image:
-    linear-gradient(rgba(79, 125, 243, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(79, 125, 243, 0.05) 1px, transparent 1px);
-  background-size: 26px 26px;
+    linear-gradient(rgba(91, 108, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 108, 255, 0.045) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.space-dots {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.45) 1px, transparent 1px),
+    radial-gradient(circle, rgba(34, 199, 216, 0.3) 1px, transparent 1px);
+  background-position: 0 0, 16px 18px;
+  background-size: 34px 34px, 42px 42px;
 }

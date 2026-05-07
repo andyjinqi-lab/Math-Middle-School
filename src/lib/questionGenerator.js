@@ -490,7 +490,299 @@ function arithmeticOpenPilot(rand, id, textbookId, chapterId, difficulty) {
   })
 }
 
+function buildAdvancedChallengeQuestion(rand, id, textbookId, chapterId, category) {
+  const mk = (base) =>
+    makeQuestion({
+      id,
+      textbookId,
+      chapterId,
+      difficulty: '挑战',
+      questionType: 'composite',
+      source: '自动生成',
+      ...base,
+    })
+
+  const algebraTemplates = [
+    () => {
+      const a = pickInt(rand, 2, 6)
+      const b = pickInt(rand, 2, 7)
+      const c = pickInt(rand, 1, 5)
+      const x = pickInt(rand, -4, 6)
+      const value = (a + b) * x * x + c * x
+      return mk({
+        stem: `综合计算：先化简 A=${a}x(x+1)+${b}x(x-1)+${c}x，再求当 x=${x} 时 A 的值。`,
+        answer: `${value}`,
+        explanation: `先展开并合并：A=${a + b}x²+${c}x；代入 x=${x} 得 A=${value}。`,
+        keywords: ['展开', '合并同类项', '代入'],
+        referenceSteps: ['展开每个括号。', '合并同类项得到关于 x 的式子。', `代入 x=${x} 计算数值。`],
+      })
+    },
+    () => {
+      const p = pickInt(rand, 2, 5)
+      const q = pickInt(rand, 1, 6)
+      const r = pickInt(rand, 1, 4)
+      const ans = p * p - q * q + r
+      return mk({
+        stem: `综合计算：计算 (x+${q})(x-${q})+( ${p}x-${p} )( ${p}x+${p} ) 在 x=1 时的值，并再加上 ${r}。`,
+        answer: `${ans}`,
+        explanation: `利用平方差公式化简后代入 x=1，结果为 ${ans}。`,
+        keywords: ['平方差', '代入'],
+        referenceSteps: ['两组乘积先用平方差公式。', '再代入 x=1。', `最后加上 ${r}。`],
+      })
+    },
+  ]
+
+  const equationTemplates = [
+    () => {
+      const x = pickInt(rand, 8, 28)
+      const a = pickInt(rand, 3, 8)
+      const b = pickInt(rand, 2, 6)
+      const c = pickInt(rand, 2, 9)
+      const rhs = a * (2 * x - b) - (a - 1) * (x + c)
+      return mk({
+        stem: `高阶挑战：解 ${a}(2x-${b})-(${a - 1})(x+${c})=${rhs}。`,
+        answer: `${x}`,
+        explanation: `先去括号并合并同类项，再移项得到一元一次方程，解得 x=${x}。`,
+        keywords: ['去括号', '合并同类项', '移项'],
+        referenceSteps: ['去括号。', '合并同类项。', '移项求解并验算。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 6, 22)
+      const p = 2 * pickInt(rand, 1, 3)
+      const q = pickInt(rand, 2, 6)
+      const r = pickInt(rand, 1, 7)
+      const rhs = (p * (x + r)) / 2 + (3 * q * (x - r)) / 6
+      return mk({
+        stem: `高阶挑战：解 [${p}(x+${r})]/2 + [${3 * q}(x-${r})]/6 = ${rhs}。`,
+        answer: `${x}`,
+        explanation: `先约分与去分母，再化简为一元一次方程，解得 x=${x}。`,
+        keywords: ['去分母', '约分', '移项'],
+        referenceSteps: ['先把分母统一处理。', '再去括号并合并同类项。', '解方程并验算。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 4, 15)
+      const a = pickInt(rand, 2, 7)
+      const b = pickInt(rand, 2, 6)
+      const m = a * x - b
+      return mk({
+        stem: `参数挑战：若关于 x 的方程 ${a}x-${b}=m 的解是 x=${x}，求参数 m。`,
+        answer: `${m}`,
+        explanation: `把 x=${x} 代入 ${a}x-${b}=m，得 m=${a}×${x}-${b}=${m}。`,
+        keywords: ['参数', '代入', '方程'],
+        referenceSteps: ['把已知解代入方程。', '计算右侧参数值。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 7, 26)
+      const a = pickInt(rand, 2, 5)
+      const b = pickInt(rand, 2, 6)
+      const c = pickInt(rand, 1, 4)
+      const d = pickInt(rand, 1, 5)
+      const rhs = a * (x - b) + c * (x + d) - (a - c) * x
+      return mk({
+        stem: `高阶挑战：解 ${a}(x-${b})+${c}(x+${d})-(${a - c})x=${rhs}。`,
+        answer: `${x}`,
+        explanation: `先整体化简左边，再移项解出 x=${x}。`,
+        keywords: ['整体化简', '移项'],
+        referenceSteps: ['去括号并合并。', '移项求 x。', '验算。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 6, 24)
+      const p = pickInt(rand, 2, 5)
+      let q = pickInt(rand, 2, 6)
+      if (q === p) q += 1
+      const t = pickInt(rand, 4, 10)
+      const total = p * x + q * (x + t)
+      return mk({
+        stem: `应用挑战：某班团购练习册，A类每本 ${p} 元买 x 本，B类每本 ${q} 元买 x+${t} 本，共花 ${total} 元。求 x。`,
+        answer: `${x}`,
+        explanation: `由总价列方程 ${p}x+${q}(x+${t})=${total}，解得 x=${x}。`,
+        keywords: ['设元', '列方程', '总价'],
+        referenceSteps: ['设未知数 x。', '写总价方程。', '解并验算。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 8, 30)
+      const unit = pickInt(rand, 12, 26)
+      const trigger = pickInt(rand, 5, 10)
+      const off = pickInt(rand, 2, 6)
+      const total = unit * trigger + (unit - off) * (x - trigger)
+      return mk({
+        stem: `应用挑战（分段计价）：单价 ${unit} 元，超过 ${trigger} 件后超出部分每件优惠 ${off} 元。某次购买共付 ${total} 元，求购买件数 x。`,
+        answer: `${x}`,
+        explanation: `列方程 ${unit}×${trigger}+(${unit}-${off})(x-${trigger})=${total}，解得 x=${x}。`,
+        keywords: ['分段函数思想', '方程建模'],
+        referenceSteps: ['分段写总价。', '列方程。', '求解并验算。'],
+      })
+    },
+    () => {
+      const ten = pickInt(rand, 2, 7)
+      const one = pickInt(rand, ten + 1, 9)
+      const x = one
+      const diff = (10 * one + ten) - (10 * ten + one)
+      return mk({
+        stem: `应用挑战（数位）：某两位数十位是 ${ten}，个位是 x。交换数位后，新数比原数大 ${diff}。求 x。`,
+        answer: `${x}`,
+        explanation: `原数 10×${ten}+x，新数 10x+${ten}，列方程 (10x+${ten})-(10×${ten}+x)=${diff}，解得 x=${x}。`,
+        keywords: ['两位数', '位值'],
+        referenceSteps: ['按位值写数。', '根据差值列式。', '解得 x。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 4, 18)
+      const m = pickInt(rand, 2, 6)
+      const n = pickInt(rand, 1, 5)
+      const y = m * x + n
+      const z = (m + 1) * x - n
+      return mk({
+        stem: `综合挑战：已知 y=${m}x+${n}，z=${m + 1}x-${n}，且 2y-z=${2 * y - z}。求 x。`,
+        answer: `${x}`,
+        explanation: `先化简 2y-z，再代入已知值解方程，得 x=${x}。`,
+        keywords: ['代数式化简', '一元一次方程'],
+        referenceSteps: ['写出 2y-z。', '代入并化简。', '解出 x。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 9, 36)
+      const fast = pickInt(rand, 14, 24)
+      const slow = pickInt(rand, 5, 12)
+      const gap = (fast - slow) * x
+      return mk({
+        stem: `应用挑战（追及）：甲速 ${slow} m/min，乙速 ${fast} m/min，同向出发且初始相距 ${gap} m。乙追上甲需多少分钟？`,
+        answer: `${x}`,
+        explanation: `设需 t 分钟，按速度差列式 (${fast}-${slow})t=${gap}，解得 t=${x}。`,
+        keywords: ['追及问题', '速度差'],
+        referenceSteps: ['设追及时间为 t。', '列速度差方程。', '求解 t。'],
+      })
+    },
+    () => {
+      const years = pickInt(rand, 2, 6)
+      const ratio = pickInt(rand, 2, 4)
+      const bNow = pickInt(rand, 6, 13)
+      const aNow = ratio * (bNow + years) - years
+      const diff = aNow - bNow
+      return mk({
+        stem: `应用挑战（年龄）：甲现 ${aNow} 岁，乙现 ${bNow} 岁。${years} 年后甲是乙的 ${ratio} 倍。设甲比乙大 x 岁，求 x。`,
+        answer: `${diff}`,
+        explanation: `由 (${bNow}+${years})×${ratio}=${aNow}+${years}，年龄差 x=${aNow}-${bNow}=${diff}。`,
+        keywords: ['年龄方程', '设元'],
+        referenceSteps: ['根据“若干年后倍数”列式。', '求年龄差 x。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 10, 30)
+      const a = pickInt(rand, 2, 6)
+      const b = pickInt(rand, 2, 6)
+      const rhs = a * (x - b) + b * (x + a) - (a + b)
+      return mk({
+        stem: `高阶挑战：解 ${a}(x-${b})+${b}(x+${a})-${a + b}=${rhs}，并说明为何可先合并含 x 项。`,
+        answer: `${x}`,
+        explanation: `去括号后同类项可直接合并，得到一元一次方程，解得 x=${x}。`,
+        keywords: ['同类项', '化简', '移项'],
+        referenceSteps: ['去括号。', '合并含 x 项与常数项。', '移项求解。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 4, 16)
+      const a = 2 * pickInt(rand, 2, 6)
+      const b = 2 * pickInt(rand, 1, 5)
+      const c = 3 * pickInt(rand, 1, 4)
+      const rhs = (a * x) / 2 - (b * (x - 1)) / 2 + c
+      return mk({
+        stem: `高阶挑战：解 (${a}x)/2 - [${b}(x-1)]/2 + ${c} = ${rhs}。`,
+        answer: `${x}`,
+        explanation: `先去分母并化简，解得 x=${x}。`,
+        keywords: ['去分母', '去括号', '合并同类项'],
+        referenceSteps: ['先清分母。', '化简。', '移项求解并验算。'],
+      })
+    },
+  ]
+
+  const geometryTemplates = [
+    () => {
+      const a = pickInt(rand, 35, 75)
+      const b = pickInt(rand, 20, 50)
+      const ans = 180 - a - b
+      return mk({
+        stem: `角度综合：在 △ABC 中，延长 BC 到 D，已知 ∠A=${a}°，外角 ∠ACD=${a + b}°。求 ∠B。`,
+        answer: `${b}°`,
+        explanation: `外角等于两内对角和，∠ACD=∠A+∠B，所以 ∠B=${b}°。`,
+        keywords: ['外角', '内对角'],
+        referenceSteps: ['写出三角形外角定理。', '代入已知角。', '求出 ∠B。'],
+      })
+    },
+    () => {
+      const x = pickInt(rand, 18, 38)
+      const y = pickInt(rand, 52, 86)
+      const ans = 180 - x - y
+      return mk({
+        stem: `角度综合：如图条件可得三角形两角分别为 ${x}° 与 ${y}°，求第三角。`,
+        answer: `${ans}°`,
+        explanation: `三角形内角和 180°，第三角=180°-${x}°-${y}°=${ans}°。`,
+        keywords: ['内角和', '180'],
+        referenceSteps: ['三角形内角和定理。', '代入两个已知角。', '计算第三角。'],
+      })
+    },
+  ]
+
+  const functionTemplates = [
+    () => {
+      const m = pickInt(rand, 2, 6)
+      const b = pickInt(rand, -8, 10)
+      const x1 = pickInt(rand, -3, 2)
+      const x2 = pickInt(rand, 3, 8)
+      const delta = m * (x2 - x1)
+      return mk({
+        stem: `函数综合：一次函数 y=${m}x${b >= 0 ? '+' : ''}${b}，求当 x 从 ${x1} 增加到 ${x2} 时，y 的增量。`,
+        answer: `${delta}`,
+        explanation: `一次函数增量只与斜率和 x 变化量有关，Δy=${m}×(${x2}-${x1})=${delta}。`,
+        keywords: ['斜率', '增量'],
+        referenceSteps: ['写出 y2-y1。', '代入一次函数表达式。', '化简得到增量。'],
+      })
+    },
+  ]
+
+  const probabilityTemplates = [
+    () => {
+      const red = pickInt(rand, 3, 8)
+      const blue = pickInt(rand, 2, 7)
+      const total = red + blue
+      const ans = Number((1 - red / total).toFixed(2))
+      return mk({
+        stem: `概率综合：袋中有红球 ${red} 个、蓝球 ${blue} 个，随机取 1 个，取到“非红球”的概率是（保留两位小数）。`,
+        answer: `${ans.toFixed(2)}`,
+        explanation: `P(非红)=1-P(红)=1-${red}/${total}=${ans.toFixed(2)}。`,
+        keywords: ['对立事件', '概率'],
+        referenceSteps: ['先求 P(红)。', '用 1 减去 P(红)。', '保留两位小数。'],
+      })
+    },
+  ]
+
+  const byCategory = {
+    arithmetic: algebraTemplates,
+    ratio: algebraTemplates,
+    equation: equationTemplates,
+    'system-equation': equationTemplates,
+    geometry: geometryTemplates,
+    function: functionTemplates,
+    probability: probabilityTemplates,
+  }
+
+  const pool = byCategory[category] || algebraTemplates
+  const serial = Number(String(id).split('-').pop()) || 1
+  const offset = hashSeed(`${textbookId}-${chapterId}-${category}`) % pool.length
+  const index = (serial - 1 + offset) % pool.length
+  return pool[index]()
+}
+
 function buildPilotChallengeQuestion(rand, id, textbookId, chapterId, difficulty) {
+  if (difficulty === '挑战') {
+    const category = chapterCategory({ id: chapterId, name: '' })
+    return buildAdvancedChallengeQuestion(rand, id, textbookId, chapterId, category)
+  }
   const chapterTypeMap = {
     '7a-c2': [equationCompositePilot, equationOpenPilot],
     '7a-c3': [geometryCompositePilot, geometryOpenPilot],
@@ -523,8 +815,8 @@ const CHAPTER_CATEGORY_BY_ID = {
   '7a-c2': 'equation',
   '7a-c3': 'geometry',
   '7a-c4': 'arithmetic',
-  '7a-c5': 'geometry',
-  '7a-c6': 'arithmetic',
+  '7a-c5': 'ratio',
+  '7a-c6': 'ratio',
   '7a-c7': 'arithmetic',
   '7a-c8': 'arithmetic',
   '7b-c1': 'equation',
@@ -649,11 +941,17 @@ export function buildGeneratedQuestions(textbooks, countPerDifficulty = 100) {
 }
 
 export function mergeQuestionBank(curatedQuestions, generatedQuestions) {
-  const normalizedCurated = curatedQuestions.map((q, i) => ({
-    ...q,
-    source: q.source ?? (i % 2 === 0 ? '教材真题' : '教师自编'),
-    questionType: q.questionType ?? 'choice',
-  }))
+  const normalizedCurated = curatedQuestions.map((q, i) => {
+    const source = q.source ?? (i % 2 === 0 ? '教材真题' : '教师自编')
+    const isPdfWorkbook = source === 'SB' || source === 'PDF练习册'
+    const difficulty = q.difficulty ?? (isPdfWorkbook ? '提升' : '基础')
+    return {
+      ...q,
+      source,
+      difficulty,
+      questionType: q.questionType ?? 'choice',
+    }
+  })
   const ids = new Set(normalizedCurated.map((q) => q.id))
   const dedupedGenerated = generatedQuestions.filter((q) => !ids.has(q.id))
   return [...normalizedCurated, ...dedupedGenerated]
