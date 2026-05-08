@@ -1,16 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense } from 'react'
 import AppShell from './components/layout/AppShell'
-import HomePage from './pages/HomePage'
-import PracticePage from './pages/PracticePage'
-import WrongBookPage from './pages/WrongBookPage'
-import GrowthPage from './pages/GrowthPage'
-import ParentPage from './pages/ParentPage'
 import AuthPage from './pages/AuthPage'
-import TransferPracticePage from './pages/TransferPracticePage'
 import { curatedQuestions, textbooks } from './data/questionBank'
-import ocrReviewedQuestions from './data/ocrReviewedQuestions.json'
-import pdfWorkbookQuestions from './data/pdfWorkbookQuestions.json'
-import xslRuleQuestions from './data/xslRuleQuestions.json'
 import {
   calcChapterStats,
   calcSummary,
@@ -19,7 +11,6 @@ import {
   loadAttemptsForUser,
   saveAttemptForUser,
 } from './lib/learningStore'
-import { buildGeneratedQuestions, mergeQuestionBank } from './lib/questionGenerator'
 import {
   clearSession,
   loadSession,
@@ -28,6 +19,13 @@ import {
   requestPasswordReset,
   resetPasswordByToken,
 } from './lib/authApi'
+
+const HomePage = lazy(() => import('./pages/HomePage'))
+const PracticePage = lazy(() => import('./pages/PracticePage'))
+const WrongBookPage = lazy(() => import('./pages/WrongBookPage'))
+const GrowthPage = lazy(() => import('./pages/GrowthPage'))
+const ParentPage = lazy(() => import('./pages/ParentPage'))
+const TransferPracticePage = lazy(() => import('./pages/TransferPracticePage'))
 
 const CHAPTER_DISPLAY_NAME_MAP = {
   '6a-c1': '第1章 有理数初步',
@@ -108,6 +106,9 @@ function App() {
   const [session, setSession] = useState(() => loadSession())
   const [page, setPage] = useState('home')
   const [attempts, setAttempts] = useState([])
+  const [questions, setQuestions] = useState(() => curatedQuestions)
+  const [questionBankLoading, setQuestionBankLoading] = useState(false)
+  const [questionBankError, setQuestionBankError] = useState('')
   const [attemptError, setAttemptError] = useState('')
   const [appNotice, setAppNotice] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
@@ -122,16 +123,6 @@ function App() {
   })
 
   const user = session?.user ?? null
-
-  const generatedQuestions = useMemo(() => buildGeneratedQuestions(DISPLAY_TEXTBOOKS, 100), [])
-  const questions = useMemo(
-    () =>
-      mergeQuestionBank(
-        [...curatedQuestions, ...ocrReviewedQuestions, ...pdfWorkbookQuestions, ...xslRuleQuestions],
-        generatedQuestions,
-      ),
-    [generatedQuestions],
-  )
 
   const summary = useMemo(() => calcSummary(attempts), [attempts])
   const trendData = useMemo(() => calcTrend(attempts, 7), [attempts])
@@ -176,6 +167,60 @@ function App() {
       })),
     [chapterStatsBySelectedTextbook],
   )
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadQuestionBank() {
+      if (!user) {
+        setQuestions(curatedQuestions)
+        setQuestionBankLoading(false)
+        setQuestionBankError('')
+        return
+      }
+
+      setQuestionBankLoading(true)
+      setQuestionBankError('')
+
+      try {
+        const [ocrReviewedModule, pdfWorkbookModule, xslRuleModule, questionGeneratorModule] =
+          await Promise.all([
+            import('./data/ocrReviewedQuestions.json'),
+            import('./data/pdfWorkbookQuestions.json'),
+            import('./data/xslRuleQuestions.json'),
+            import('./lib/questionGenerator'),
+          ])
+
+        if (cancelled) return
+
+        const generatedQuestions = questionGeneratorModule.buildGeneratedQuestions(DISPLAY_TEXTBOOKS, 100)
+        const mergedQuestions = questionGeneratorModule.mergeQuestionBank(
+          [
+            ...curatedQuestions,
+            ...(ocrReviewedModule.default ?? []),
+            ...(pdfWorkbookModule.default ?? []),
+            ...(xslRuleModule.default ?? []),
+          ],
+          generatedQuestions,
+        )
+
+        setQuestions(mergedQuestions)
+      } catch (error) {
+        if (!cancelled) {
+          setQuestions(curatedQuestions)
+          setQuestionBankError(error.message || '题库加载失败，当前仅显示基础题。')
+        }
+      } finally {
+        if (!cancelled) setQuestionBankLoading(false)
+      }
+    }
+
+    loadQuestionBank()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   useEffect(() => {
     let cancelled = false
@@ -322,6 +367,16 @@ function App() {
 
   const withAttemptBanner = (node) => (
     <div className="space-y-3">
+      {questionBankLoading ? (
+        <div className="rounded-2xl border border-primary/15 bg-softBlue px-4 py-2 text-sm font-semibold text-primary">
+          正在加载同步题库，首页和登录可先使用。
+        </div>
+      ) : null}
+      {questionBankError ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
+          题库提示：{questionBankError}
+        </div>
+      ) : null}
       {appNotice ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-primary/20 bg-softBlue px-4 py-2 text-sm font-semibold text-primary">
           <span>{appNotice}</span>
@@ -335,7 +390,15 @@ function App() {
           记录服务提示：{attemptError}
         </div>
       ) : null}
-      {node}
+      <Suspense
+        fallback={
+          <div className="rounded-[28px] border border-primary/10 bg-white p-8 text-sm font-semibold text-textSecondary shadow-card">
+            正在加载页面...
+          </div>
+        }
+      >
+        {node}
+      </Suspense>
     </div>
   )
 
