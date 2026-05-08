@@ -32,8 +32,31 @@ const usersFile = path.join(dataDir, 'users.json')
 const resetFile = path.join(dataDir, 'password_resets.json')
 const attemptsFile = path.join(dataDir, 'attempts.json')
 
+function shouldUsePostgresSsl(connectionString) {
+  try {
+    const url = new URL(connectionString)
+    const sslMode = url.searchParams.get('sslmode')
+    if (sslMode === 'disable') return false
+    if (sslMode === 'require' || sslMode === 'prefer' || sslMode === 'no-verify') return true
+
+    return /supabase|render|neon|railway|pooler/i.test(url.hostname)
+  } catch {
+    return false
+  }
+}
+
+function createPostgresPool(connectionString) {
+  return new Pool({
+    connectionString,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 5,
+    ...(shouldUsePostgresSsl(connectionString) ? { ssl: { rejectUnauthorized: false } } : {}),
+  })
+}
+
 const storageMode = databaseUrl && Pool ? 'postgresql' : 'json-file'
-const pool = storageMode === 'postgresql' ? new Pool({ connectionString: databaseUrl }) : null
+const pool = storageMode === 'postgresql' ? createPostgresPool(databaseUrl) : null
 const resend = resendKey ? new Resend(resendKey) : null
 
 function ensureLocalStorage() {
@@ -53,6 +76,8 @@ function writeJson(filePath, value) {
 
 async function initPostgres() {
   if (!pool) return
+
+  await pool.query('SELECT 1')
 
   async function getColumnType(tableName, columnName) {
     const { rows } = await pool.query(
@@ -100,7 +125,12 @@ async function initPostgres() {
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at BIGINT;')
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at BIGINT;')
   await pool.query('ALTER TABLE users ALTER COLUMN updated_at DROP NOT NULL;')
-  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(email);')
+  await ensureBigintTimeColumn('users', 'created_at')
+  await ensureBigintTimeColumn('users', 'updated_at')
+  await pool.query("UPDATE users SET display_name='学员' WHERE display_name IS NULL;")
+  await pool.query('UPDATE users SET created_at=$1 WHERE created_at IS NULL;', [Date.now()])
+  await pool.query('UPDATE users SET updated_at=created_at WHERE updated_at IS NULL;')
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(LOWER(email));')
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS password_resets (
@@ -121,10 +151,13 @@ async function initPostgres() {
   await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS expires_at BIGINT;')
   await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS created_at BIGINT;')
   await pool.query('ALTER TABLE password_resets ADD COLUMN IF NOT EXISTS used_at BIGINT;')
-  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_password_resets_token_unique ON password_resets(token);')
   await ensureBigintTimeColumn('password_resets', 'expires_at')
   await ensureBigintTimeColumn('password_resets', 'created_at')
   await ensureBigintTimeColumn('password_resets', 'used_at')
+  await pool.query('UPDATE password_resets SET used=FALSE WHERE used IS NULL;')
+  await pool.query('UPDATE password_resets SET created_at=$1 WHERE created_at IS NULL;', [Date.now()])
+  await pool.query('UPDATE password_resets SET expires_at=created_at + 1800000 WHERE expires_at IS NULL;')
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_password_resets_token_unique ON password_resets(token);')
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS attempts (
@@ -153,9 +186,9 @@ async function initPostgres() {
   await pool.query('ALTER TABLE attempts ADD COLUMN IF NOT EXISTS created_at BIGINT;')
   await ensureBigintTimeColumn('attempts', 'ts')
   await ensureBigintTimeColumn('attempts', 'created_at')
-
-  await ensureBigintTimeColumn('users', 'created_at')
-  await ensureBigintTimeColumn('users', 'updated_at')
+  await pool.query('UPDATE attempts SET correct=FALSE WHERE correct IS NULL;')
+  await pool.query('UPDATE attempts SET ts=$1 WHERE ts IS NULL;', [Date.now()])
+  await pool.query('UPDATE attempts SET created_at=ts WHERE created_at IS NULL;')
 
   await pool.query('CREATE INDEX IF NOT EXISTS idx_attempts_user_ts ON attempts(user_id, ts DESC);')
 }
@@ -589,6 +622,17 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  console.error('[bootstrap] failed:', error)
+  console.error('[bootstrap] failed:', {
+    message: error?.message,
+    code: error?.code,
+    detail: error?.detail,
+    hint: error?.hint,
+    schema: error?.schema,
+    table: error?.table,
+    column: error?.column,
+    dataType: error?.dataType,
+    constraint: error?.constraint,
+    stack: error?.stack,
+  })
   process.exit(1)
 })
