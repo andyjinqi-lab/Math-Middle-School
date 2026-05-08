@@ -107,6 +107,7 @@ function App() {
   const [page, setPage] = useState('home')
   const [attempts, setAttempts] = useState([])
   const [questions, setQuestions] = useState(() => curatedQuestions)
+  const [questionBankReady, setQuestionBankReady] = useState(false)
   const [questionBankLoading, setQuestionBankLoading] = useState(false)
   const [questionBankError, setQuestionBankError] = useState('')
   const [attemptError, setAttemptError] = useState('')
@@ -123,6 +124,7 @@ function App() {
   })
 
   const user = session?.user ?? null
+  const shouldLoadFullQuestionBank = user && ['practice', 'wrong', 'transfer'].includes(page)
 
   const summary = useMemo(() => calcSummary(attempts), [attempts])
   const trendData = useMemo(() => calcTrend(attempts, 7), [attempts])
@@ -174,10 +176,13 @@ function App() {
     async function loadQuestionBank() {
       if (!user) {
         setQuestions(curatedQuestions)
+        setQuestionBankReady(false)
         setQuestionBankLoading(false)
         setQuestionBankError('')
         return
       }
+
+      if (!shouldLoadFullQuestionBank || questionBankReady) return
 
       setQuestionBankLoading(true)
       setQuestionBankError('')
@@ -205,9 +210,11 @@ function App() {
         )
 
         setQuestions(mergedQuestions)
+        setQuestionBankReady(true)
       } catch (error) {
         if (!cancelled) {
           setQuestions(curatedQuestions)
+          setQuestionBankReady(false)
           setQuestionBankError(error.message || '题库加载失败，当前仅显示基础题。')
         }
       } finally {
@@ -220,7 +227,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [questionBankReady, shouldLoadFullQuestionBank, user])
 
   useEffect(() => {
     let cancelled = false
@@ -369,7 +376,7 @@ function App() {
     <div className="space-y-3">
       {questionBankLoading ? (
         <div className="rounded-2xl border border-primary/15 bg-softBlue px-4 py-2 text-sm font-semibold text-primary">
-          正在加载同步题库，首页和登录可先使用。
+          正在加载同步题库，请稍等片刻。
         </div>
       ) : null}
       {questionBankError ? (
