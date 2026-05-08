@@ -230,6 +230,132 @@ function probabilityQuestion(rand, id, textbookId, chapterId, difficulty) {
   })
 }
 
+function statisticsQuestion(rand, id, textbookId, chapterId, difficulty) {
+  const total = pickInt(rand, 30, difficulty === '基础' ? 80 : 150)
+  const part = pickInt(rand, 8, Math.floor(total * 0.7))
+  const percent = Number(((part / total) * 100).toFixed(1))
+
+  return buildQuestionByType({
+    rand,
+    id,
+    textbookId,
+    chapterId,
+    difficulty,
+    answerValue: percent,
+    baseStem: `数据分析：某班共调查 ${total} 人，其中喜欢数学闯关练习的有 ${part} 人，占比约为`,
+    explanation: `占比=${part}÷${total}×100%≈${percent}%。`,
+    optionConfig: {
+      step: 2,
+      min: 0,
+      max: 100,
+      formatter: (v) => `${Number(v).toFixed(1)}%`,
+    },
+  })
+}
+
+function algebraExpressionQuestion(rand, id, textbookId, chapterId, difficulty) {
+  const a = pickInt(rand, 2, difficulty === '基础' ? 5 : 9)
+  const b = pickInt(rand, 1, 8)
+  const c = pickInt(rand, 2, 7)
+  const coefficient = a + c
+  const constant = b - c
+
+  return makeQuestion({
+    id,
+    textbookId,
+    chapterId,
+    difficulty,
+    questionType: difficulty === '挑战' ? 'calculation' : 'choice',
+    stem:
+      difficulty === '挑战'
+        ? `整式运算：先化简 ${a}x+${b}+${c}(x-1)，再写出合并同类项后的结果。`
+        : `整式运算：化简 ${a}x+${b}+${c}(x-1) 的结果是`,
+    ...(difficulty === '挑战'
+      ? {
+          answer: `${coefficient}x${constant >= 0 ? '+' : ''}${constant}`,
+        }
+      : {
+          options: [
+            `A. ${coefficient}x${constant >= 0 ? '+' : ''}${constant}`,
+            `B. ${a + c}x+${b + c}`,
+            `C. ${a}x+${b - c}`,
+            `D. ${a - c}x${constant >= 0 ? '+' : ''}${constant}`,
+          ],
+          answer: 0,
+        }),
+    explanation: `先去括号：${c}(x-1)=${c}x-${c}，再合并同类项，得 ${coefficient}x${constant >= 0 ? '+' : ''}${constant}。`,
+  })
+}
+
+function quadraticFunctionQuestion(rand, id, textbookId, chapterId, difficulty) {
+  const a = pickInt(rand, 1, difficulty === '基础' ? 3 : 5)
+  const h = pickInt(rand, -4, 4)
+  const k = pickInt(rand, -6, 8)
+  const x = pickInt(rand, -3, 5)
+  const y = a * (x - h) * (x - h) + k
+
+  return buildQuestionByType({
+    rand,
+    id,
+    textbookId,
+    chapterId,
+    difficulty,
+    answerValue: y,
+    baseStem: `二次函数 y=${a}(x${h >= 0 ? '-' : '+'}${Math.abs(h)})²${k >= 0 ? '+' : ''}${k} 中，当 x=${x} 时，y=`,
+    explanation: `代入 x=${x}，得 y=${a}×(${x}-${h})²${k >= 0 ? '+' : ''}${k}=${y}。`,
+    optionConfig: { step: 2, min: -100, max: 200 },
+  })
+}
+
+function quadraticEquationQuestion(rand, id, textbookId, chapterId, difficulty) {
+  const r1 = pickInt(rand, -6, 4)
+  let r2 = pickInt(rand, 1, 9)
+  if (r2 === r1) r2 += 1
+  const sum = r1 + r2
+  const product = r1 * r2
+
+  return makeQuestion({
+    id,
+    textbookId,
+    chapterId,
+    difficulty,
+    questionType: difficulty === '基础' ? 'choice' : 'calculation',
+    stem:
+      difficulty === '基础'
+        ? `一元二次方程 x²${sum >= 0 ? '-' : '+'}${Math.abs(sum)}x${product >= 0 ? '+' : ''}${product}=0 的一个根是`
+        : `解一元二次方程：x²${sum >= 0 ? '-' : '+'}${Math.abs(sum)}x${product >= 0 ? '+' : ''}${product}=0。`,
+    ...(difficulty === '基础'
+      ? buildNumericOptions(r1, rand, { step: 1, min: -12, max: 12 })
+      : {
+          answer: `${r1},${r2}`,
+        }),
+    explanation: `原方程可分解为 (x-${r1})(x-${r2})=0，所以 x=${r1} 或 x=${r2}。`,
+  })
+}
+
+function trigonometryQuestion(rand, id, textbookId, chapterId, difficulty) {
+  const triples = [
+    { sin: '3/5', cos: '4/5', tan: '3/4' },
+    { sin: '5/13', cos: '12/13', tan: '5/12' },
+    { sin: '8/17', cos: '15/17', tan: '8/15' },
+  ]
+  const picked = triples[pickInt(rand, 0, triples.length - 1)]
+  const ask = ['sin', 'cos', 'tan'][pickInt(rand, 0, 2)]
+  const answer = picked[ask]
+
+  return makeQuestion({
+    id,
+    textbookId,
+    chapterId,
+    difficulty,
+    questionType: 'choice',
+    stem: `锐角三角函数：在直角三角形中，若某锐角的对边、邻边、斜边对应比为 ${picked.sin}、${picked.cos}，则 ${ask}θ=`,
+    options: [`A. ${answer}`, 'B. 1', 'C. 0', `D. ${picked[ask === 'tan' ? 'sin' : 'tan']}`],
+    answer: 0,
+    explanation: `根据锐角三角函数定义，${ask}θ=${answer}。`,
+  })
+}
+
 function angleSupplementQuestion(rand, id, textbookId, chapterId, difficulty) {
   const known = pickInt(rand, 20, difficulty === '基础' ? 120 : 150)
   const answer = 180 - known
@@ -858,6 +984,11 @@ function buildAdvancedChallengeQuestion(rand, id, textbookId, chapterId, categor
   const byCategory = {
     arithmetic: algebraTemplates,
     application: equationTemplates,
+    algebra: algebraTemplates,
+    statistics: probabilityTemplates,
+    'quadratic-function': functionTemplates,
+    'quadratic-equation': equationTemplates,
+    trigonometry: geometryTemplates,
     ratio: algebraTemplates,
     equation: equationTemplates,
     'system-equation': equationTemplates,
@@ -891,63 +1022,63 @@ function buildPilotChallengeQuestion(rand, id, textbookId, chapterId, difficulty
 
 const CHAPTER_CATEGORY_BY_ID = {
   '6a-c1': 'arithmetic',
-  '6a-c2': 'arithmetic',
+  '6a-c2': 'algebra',
   '6a-c3': 'equation',
   '6a-c4': 'geometry',
   '6a-c5': 'ratio',
   '6a-c6': 'ratio',
-  '6a-c7': 'probability',
+  '6a-c7': 'statistics',
   '6a-c8': 'application',
   '6b-c1': 'ratio',
   '6b-c2': 'geometry',
-  '6b-c3': 'probability',
+  '6b-c3': 'statistics',
   '6b-c4': 'application',
   '6b-c5': 'equation',
   '6b-c6': 'geometry',
   '6b-c7': 'geometry',
   '6b-c8': 'probability',
-  '7a-c1': 'arithmetic',
+  '7a-c1': 'algebra',
   '7a-c2': 'equation',
   '7a-c3': 'geometry',
-  '7a-c4': 'arithmetic',
+  '7a-c4': 'algebra',
   '7a-c5': 'ratio',
   '7a-c6': 'ratio',
-  '7a-c7': 'arithmetic',
+  '7a-c7': 'algebra',
   '7a-c8': 'application',
   '7b-c1': 'equation',
   '7b-c2': 'system-equation',
-  '7b-c3': 'probability',
+  '7b-c3': 'statistics',
   '7b-c4': 'geometry',
-  '7b-c5': 'arithmetic',
+  '7b-c5': 'algebra',
   '7b-c6': 'geometry',
   '7b-c7': 'geometry',
   '7b-c8': 'application',
   '8a-c1': 'function',
   '8a-c2': 'geometry',
-  '8a-c3': 'equation',
-  '8a-c4': 'probability',
+  '8a-c3': 'algebra',
+  '8a-c4': 'statistics',
   '8a-c5': 'geometry',
-  '8a-c6': 'arithmetic',
+  '8a-c6': 'algebra',
   '8a-c7': 'function',
   '8a-c8': 'application',
-  '8b-c1': 'equation',
+  '8b-c1': 'ratio',
   '8b-c2': 'geometry',
   '8b-c3': 'geometry',
   '8b-c4': 'probability',
   '8b-c5': 'function',
   '8b-c6': 'geometry',
-  '8b-c7': 'probability',
+  '8b-c7': 'statistics',
   '8b-c8': 'application',
-  '9a-c1': 'function',
+  '9a-c1': 'quadratic-function',
   '9a-c2': 'geometry',
   '9a-c3': 'geometry',
   '9a-c4': 'application',
-  '9a-c5': 'equation',
-  '9a-c6': 'function',
+  '9a-c5': 'quadratic-equation',
+  '9a-c6': 'quadratic-function',
   '9a-c7': 'geometry',
   '9a-c8': 'application',
-  '9b-c1': 'geometry',
-  '9b-c2': 'probability',
+  '9b-c1': 'trigonometry',
+  '9b-c2': 'statistics',
   '9b-c3': 'application',
   '9b-c4': 'application',
   '9b-c5': 'geometry',
@@ -964,9 +1095,14 @@ function chapterCategory(chapter) {
 
   if (/几何|图形|角|三角|全等|相似|圆|平行|坐标|勾股|变换|证明/.test(name)) return 'geometry'
   if (/方程组/.test(name)) return 'system-equation'
+  if (/二次函数/.test(name)) return 'quadratic-function'
+  if (/一元二次方程/.test(name)) return 'quadratic-equation'
+  if (/三角函数/.test(name)) return 'trigonometry'
+  if (/统计|抽样|数据/.test(name)) return 'statistics'
+  if (/整式|因式|指数|实数|根式/.test(name)) return 'algebra'
   if (/方程|不等式|分式|因式/.test(name)) return 'equation'
   if (/函数/.test(name)) return 'function'
-  if (/概率|统计|抽样|数据/.test(name)) return 'probability'
+  if (/概率/.test(name)) return 'probability'
   if (/应用|建模|综合|中考|压轴|真题/.test(name)) return 'application'
   if (/比|比例|分数|小数/.test(name)) return 'ratio'
 
@@ -975,7 +1111,12 @@ function chapterCategory(chapter) {
 }
 
 function factoryByCategory(category) {
+  if (category === 'algebra') return algebraExpressionQuestion
   if (category === 'application') return applicationModelQuestion
+  if (category === 'statistics') return statisticsQuestion
+  if (category === 'quadratic-function') return quadraticFunctionQuestion
+  if (category === 'quadratic-equation') return quadraticEquationQuestion
+  if (category === 'trigonometry') return trigonometryQuestion
   if (category === 'equation') return equationQuestion
   if (category === 'system-equation') return systemEquationQuestion
   if (category === 'function') return functionQuestion
