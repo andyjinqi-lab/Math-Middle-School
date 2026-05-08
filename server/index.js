@@ -37,7 +37,7 @@ function shouldUsePostgresSsl(connectionString) {
     const url = new URL(connectionString)
     const sslMode = url.searchParams.get('sslmode')
     if (sslMode === 'disable') return false
-    if (sslMode === 'require' || sslMode === 'prefer' || sslMode === 'no-verify') return true
+    if (sslMode) return true
 
     return /supabase|render|neon|railway|pooler/i.test(url.hostname)
   } catch {
@@ -45,9 +45,23 @@ function shouldUsePostgresSsl(connectionString) {
   }
 }
 
+function getPoolConnectionString(connectionString) {
+  try {
+    const url = new URL(connectionString)
+    url.searchParams.delete('sslmode')
+    url.searchParams.delete('sslcert')
+    url.searchParams.delete('sslkey')
+    url.searchParams.delete('sslrootcert')
+    url.searchParams.delete('uselibpqcompat')
+    return url.toString()
+  } catch {
+    return connectionString
+  }
+}
+
 function createPostgresPool(connectionString) {
   return new Pool({
-    connectionString,
+    connectionString: getPoolConnectionString(connectionString),
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000,
     max: 5,
