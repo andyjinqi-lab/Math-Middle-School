@@ -490,6 +490,100 @@ function arithmeticOpenPilot(rand, id, textbookId, chapterId, difficulty) {
   })
 }
 
+function applicationModelQuestion(rand, id, textbookId, chapterId, difficulty) {
+  const templates = [
+    () => {
+      const unitPrice = pickInt(rand, difficulty === '基础' ? 4 : 7, difficulty === '挑战' ? 18 : 12)
+      const count = pickInt(rand, 6, difficulty === '挑战' ? 30 : 18)
+      const shipping = pickInt(rand, 5, difficulty === '基础' ? 15 : 28)
+      const total = unitPrice * count + shipping
+      return makeQuestion({
+        id,
+        textbookId,
+        chapterId,
+        difficulty,
+        questionType: difficulty === '基础' ? 'choice' : 'open',
+        stem:
+          difficulty === '基础'
+            ? `应用建模：练习本每本 ${unitPrice} 元，运费 ${shipping} 元，一共付 ${total} 元。购买了多少本练习本？`
+            : `应用建模：练习本每本 ${unitPrice} 元，另付运费 ${shipping} 元。小明一共支付 ${total} 元。请设未知数并列方程求购买本数。`,
+        ...(difficulty === '基础'
+          ? buildNumericOptions(count, rand, { step: 1, min: 1, max: 60 })
+          : {
+              answer: `${count}`,
+              keywords: ['设', '方程', `${unitPrice}x+${shipping}`, `${total}`],
+              referenceSteps: [
+                '设购买 x 本练习本。',
+                `根据“单价×数量+运费=总价”列方程：${unitPrice}x+${shipping}=${total}。`,
+                `解得 x=${count}，所以购买 ${count} 本。`,
+              ],
+            }),
+        explanation: `设购买 x 本，则 ${unitPrice}x+${shipping}=${total}，解得 x=${count}。`,
+      })
+    },
+    () => {
+      const start = pickInt(rand, 40, 90)
+      const used = pickInt(rand, 12, 35)
+      const added = pickInt(rand, 8, 28)
+      const answer = start - used + added
+      return makeQuestion({
+        id,
+        textbookId,
+        chapterId,
+        difficulty,
+        questionType: difficulty === '基础' ? 'choice' : 'open',
+        stem:
+          difficulty === '基础'
+            ? `应用建模：仓库原有 ${start} 箱矿泉水，运走 ${used} 箱，又补进 ${added} 箱。现在有多少箱？`
+            : `应用建模：仓库原有 ${start} 箱矿泉水，上午运走 ${used} 箱，下午补进 ${added} 箱。请画出数量变化关系并求现在箱数。`,
+        ...(difficulty === '基础'
+          ? buildNumericOptions(answer, rand, { step: 1, min: 1, max: 120 })
+          : {
+              answer: `${answer}`,
+              keywords: ['原有', '运走', '补进', '现在'],
+              referenceSteps: [
+                '找出初始量、减少量、增加量。',
+                `列式：${start}-${used}+${added}。`,
+                `计算得到现在有 ${answer} 箱。`,
+              ],
+            }),
+        explanation: `数量关系为“原有-运走+补进”，所以 ${start}-${used}+${added}=${answer}。`,
+      })
+    },
+    () => {
+      const speed = pickInt(rand, 40, difficulty === '基础' ? 70 : 90)
+      const time = pickInt(rand, 2, difficulty === '挑战' ? 6 : 4)
+      const rest = pickInt(rand, 15, 35)
+      const total = speed * time + rest
+      return makeQuestion({
+        id,
+        textbookId,
+        chapterId,
+        difficulty,
+        questionType: difficulty === '基础' ? 'choice' : 'open',
+        stem:
+          difficulty === '基础'
+            ? `应用建模：汽车每小时行 ${speed} 千米，行驶 ${time} 小时后还剩 ${rest} 千米。全程多少千米？`
+            : `应用建模：汽车每小时行 ${speed} 千米，行驶 ${time} 小时后还剩 ${rest} 千米。请根据“已行路程+剩余路程=全程”建模求全程。`,
+        ...(difficulty === '基础'
+          ? buildNumericOptions(total, rand, { step: 5, min: 20, max: 600 })
+          : {
+              answer: `${total}`,
+              keywords: ['速度', '时间', '路程', '剩余'],
+              referenceSteps: [
+                `已行路程=${speed}×${time}=${speed * time}。`,
+                `全程=已行路程+剩余路程=${speed * time}+${rest}。`,
+                `全程为 ${total} 千米。`,
+              ],
+            }),
+        explanation: `已行 ${speed}×${time}=${speed * time} 千米，全程为 ${speed * time}+${rest}=${total} 千米。`,
+      })
+    },
+  ]
+
+  return templates[pickInt(rand, 0, templates.length - 1)]()
+}
+
 function buildAdvancedChallengeQuestion(rand, id, textbookId, chapterId, category) {
   const mk = (base) =>
     makeQuestion({
@@ -763,6 +857,7 @@ function buildAdvancedChallengeQuestion(rand, id, textbookId, chapterId, categor
 
   const byCategory = {
     arithmetic: algebraTemplates,
+    application: equationTemplates,
     ratio: algebraTemplates,
     equation: equationTemplates,
     'system-equation': equationTemplates,
@@ -802,11 +897,11 @@ const CHAPTER_CATEGORY_BY_ID = {
   '6a-c5': 'ratio',
   '6a-c6': 'ratio',
   '6a-c7': 'probability',
-  '6a-c8': 'arithmetic',
+  '6a-c8': 'application',
   '6b-c1': 'ratio',
   '6b-c2': 'geometry',
   '6b-c3': 'probability',
-  '6b-c4': 'arithmetic',
+  '6b-c4': 'application',
   '6b-c5': 'equation',
   '6b-c6': 'geometry',
   '6b-c7': 'geometry',
@@ -818,7 +913,7 @@ const CHAPTER_CATEGORY_BY_ID = {
   '7a-c5': 'ratio',
   '7a-c6': 'ratio',
   '7a-c7': 'arithmetic',
-  '7a-c8': 'arithmetic',
+  '7a-c8': 'application',
   '7b-c1': 'equation',
   '7b-c2': 'system-equation',
   '7b-c3': 'probability',
@@ -826,7 +921,7 @@ const CHAPTER_CATEGORY_BY_ID = {
   '7b-c5': 'arithmetic',
   '7b-c6': 'geometry',
   '7b-c7': 'geometry',
-  '7b-c8': 'arithmetic',
+  '7b-c8': 'application',
   '8a-c1': 'function',
   '8a-c2': 'geometry',
   '8a-c3': 'equation',
@@ -834,7 +929,7 @@ const CHAPTER_CATEGORY_BY_ID = {
   '8a-c5': 'geometry',
   '8a-c6': 'arithmetic',
   '8a-c7': 'function',
-  '8a-c8': 'arithmetic',
+  '8a-c8': 'application',
   '8b-c1': 'equation',
   '8b-c2': 'geometry',
   '8b-c3': 'geometry',
@@ -842,23 +937,23 @@ const CHAPTER_CATEGORY_BY_ID = {
   '8b-c5': 'function',
   '8b-c6': 'geometry',
   '8b-c7': 'probability',
-  '8b-c8': 'arithmetic',
+  '8b-c8': 'application',
   '9a-c1': 'function',
   '9a-c2': 'geometry',
   '9a-c3': 'geometry',
-  '9a-c4': 'arithmetic',
+  '9a-c4': 'application',
   '9a-c5': 'equation',
   '9a-c6': 'function',
   '9a-c7': 'geometry',
-  '9a-c8': 'arithmetic',
+  '9a-c8': 'application',
   '9b-c1': 'geometry',
   '9b-c2': 'probability',
-  '9b-c3': 'arithmetic',
-  '9b-c4': 'arithmetic',
+  '9b-c3': 'application',
+  '9b-c4': 'application',
   '9b-c5': 'geometry',
   '9b-c6': 'function',
   '9b-c7': 'geometry',
-  '9b-c8': 'arithmetic',
+  '9b-c8': 'application',
 }
 
 function chapterCategory(chapter) {
@@ -872,6 +967,7 @@ function chapterCategory(chapter) {
   if (/方程|不等式|分式|因式/.test(name)) return 'equation'
   if (/函数/.test(name)) return 'function'
   if (/概率|统计|抽样|数据/.test(name)) return 'probability'
+  if (/应用|建模|综合|中考|压轴|真题/.test(name)) return 'application'
   if (/比|比例|分数|小数/.test(name)) return 'ratio'
 
   if (/c2|c3|c4/.test(id) && /^8a|^8b|^9a|^9b/.test(id)) return 'geometry'
@@ -879,6 +975,7 @@ function chapterCategory(chapter) {
 }
 
 function factoryByCategory(category) {
+  if (category === 'application') return applicationModelQuestion
   if (category === 'equation') return equationQuestion
   if (category === 'system-equation') return systemEquationQuestion
   if (category === 'function') return functionQuestion
