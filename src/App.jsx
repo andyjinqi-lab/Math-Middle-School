@@ -361,7 +361,22 @@ function App() {
     )
   }
 
-  const withAttemptBanner = (node) => (
+  const renderPageContent = (node, useSuspense = true) =>
+    useSuspense ? (
+      <Suspense
+        fallback={
+          <div className="rounded-[28px] border border-primary/10 bg-white p-8 text-sm font-semibold text-textSecondary shadow-card">
+            正在加载页面...
+          </div>
+        }
+      >
+        {node}
+      </Suspense>
+    ) : (
+      node
+    )
+
+  const withAttemptBanner = (node, options = {}) => (
     <div className="space-y-3">
       {questionBankLoading ? (
         <div className="rounded-2xl border border-primary/15 bg-softBlue px-4 py-2 text-sm font-semibold text-primary">
@@ -386,15 +401,7 @@ function App() {
           记录服务提示：{attemptError}
         </div>
       ) : null}
-      <Suspense
-        fallback={
-          <div className="rounded-[28px] border border-primary/10 bg-white p-8 text-sm font-semibold text-textSecondary shadow-card">
-            正在加载页面...
-          </div>
-        }
-      >
-        {node}
-      </Suspense>
+      {renderPageContent(node, options.suspense ?? true)}
     </div>
   )
 
@@ -421,6 +428,7 @@ function App() {
           onAfterSubmit={() => setPage('wrong')}
           summary={summary}
         />,
+        { suspense: false },
       )
     }
 
@@ -473,6 +481,7 @@ function App() {
         onOpenTransfer={() => setPage('transfer')}
         onOpenGrowth={() => setPage('growth')}
       />,
+      { suspense: false },
     )
   })()
 
