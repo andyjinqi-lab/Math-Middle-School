@@ -2,6 +2,8 @@
 import { lazy, Suspense } from 'react'
 import AppShell from './components/layout/AppShell'
 import AuthPage from './pages/AuthPage'
+import HomePage from './pages/HomePage'
+import PracticePage from './pages/PracticePage'
 import { curatedQuestions, textbooks } from './data/questionBank'
 import {
   calcChapterStats,
@@ -20,8 +22,6 @@ import {
   resetPasswordByToken,
 } from './lib/authApi'
 
-const HomePage = lazy(() => import('./pages/HomePage'))
-const PracticePage = lazy(() => import('./pages/PracticePage'))
 const WrongBookPage = lazy(() => import('./pages/WrongBookPage'))
 const GrowthPage = lazy(() => import('./pages/GrowthPage'))
 const ParentPage = lazy(() => import('./pages/ParentPage'))
