@@ -254,37 +254,120 @@ function statisticsQuestion(rand, id, textbookId, chapterId, difficulty) {
 }
 
 function algebraExpressionQuestion(rand, id, textbookId, chapterId, difficulty) {
-  const a = pickInt(rand, 2, difficulty === '基础' ? 5 : 9)
-  const b = pickInt(rand, 1, 8)
-  const c = pickInt(rand, 2, 7)
-  const coefficient = a + c
-  const constant = b - c
+  const formatLinear = (coefficient, constant) => {
+    if (constant === 0) return `${coefficient}x`
+    return `${coefficient}x${constant >= 0 ? '+' : ''}${constant}`
+  }
 
-  return makeQuestion({
-    id,
-    textbookId,
-    chapterId,
-    difficulty,
-    questionType: difficulty === '挑战' ? 'calculation' : 'choice',
-    stem:
-      difficulty === '挑战'
-        ? `整式运算：先化简 ${a}x+${b}+${c}(x-1)，再写出合并同类项后的结果。`
-        : `整式运算：化简 ${a}x+${b}+${c}(x-1) 的结果是`,
-    ...(difficulty === '挑战'
-      ? {
-          answer: `${coefficient}x${constant >= 0 ? '+' : ''}${constant}`,
-        }
-      : {
-          options: [
-            `A. ${coefficient}x${constant >= 0 ? '+' : ''}${constant}`,
-            `B. ${a + c}x+${b + c}`,
-            `C. ${a}x+${b - c}`,
-            `D. ${a - c}x${constant >= 0 ? '+' : ''}${constant}`,
-          ],
-          answer: 0,
-        }),
-    explanation: `先去括号：${c}(x-1)=${c}x-${c}，再合并同类项，得 ${coefficient}x${constant >= 0 ? '+' : ''}${constant}。`,
-  })
+  const mkChoice = ({ stem, correct, distractors, explanation }) => {
+    const values = shuffle([correct, ...distractors], rand)
+    return makeQuestion({
+      id,
+      textbookId,
+      chapterId,
+      difficulty,
+      questionType: 'choice',
+      stem,
+      options: values.map((value, idx) => `${String.fromCharCode(65 + idx)}. ${value}`),
+      answer: values.findIndex((value) => value === correct),
+      explanation,
+    })
+  }
+
+  const linearSimplify = () => {
+    const a = pickInt(rand, 2, difficulty === '基础' ? 5 : 9)
+    const b = pickInt(rand, 1, 8)
+    const c = pickInt(rand, 2, 7)
+    const coefficient = a + c
+    const constant = b - c
+    const answer = formatLinear(coefficient, constant)
+
+    if (difficulty === '挑战') {
+      return makeQuestion({
+        id,
+        textbookId,
+        chapterId,
+        difficulty,
+        questionType: 'calculation',
+        stem: `整式运算：先化简 ${a}x+${b}+${c}(x-1)，再写出合并同类项后的结果。`,
+        answer,
+        explanation: `先去括号：${c}(x-1)=${c}x-${c}，再合并同类项，得 ${answer}。`,
+      })
+    }
+
+    return mkChoice({
+      stem: `整式运算：化简 ${a}x+${b}+${c}(x-1) 的结果是`,
+      correct: answer,
+      distractors: [
+        `${a + c}x+${b + c}`,
+        formatLinear(a, b - c),
+        formatLinear(a - c, constant),
+      ],
+      explanation: `先去括号：${c}(x-1)=${c}x-${c}，再合并同类项，得 ${answer}。`,
+    })
+  }
+
+  const monomialTimesPolynomial = () => {
+    const a = pickInt(rand, 2, 7)
+    const b = pickInt(rand, 2, 6)
+    const c = pickInt(rand, 1, 9)
+    return mkChoice({
+      stem: `整式乘法：计算 ${a}x(${b}x-${c}) 的结果是`,
+      correct: `${a * b}x²-${a * c}x`,
+      distractors: [
+        `${a + b}x²-${c}x`,
+        `${a * b}x²-${c}x`,
+        `${a * b}x²+${a * c}x`,
+      ],
+      explanation: `用单项式乘多项式法则，${a}x·${b}x=${a * b}x²，${a}x·(-${c})=-${a * c}x。`,
+    })
+  }
+
+  const squareDifference = () => {
+    const a = pickInt(rand, 2, 9)
+    return mkChoice({
+      stem: `乘法公式：展开 (x+${a})(x-${a}) 的结果是`,
+      correct: `x²-${a * a}`,
+      distractors: [`x²+${a * a}`, `x²-${2 * a}x+${a * a}`, `x²+${2 * a}x-${a * a}`],
+      explanation: `利用平方差公式 (a+b)(a-b)=a²-b²，所以结果为 x²-${a * a}。`,
+    })
+  }
+
+  const commonFactor = () => {
+    const a = pickInt(rand, 2, 8)
+    const b = pickInt(rand, 2, 9)
+    const c = pickInt(rand, 1, 8)
+    return mkChoice({
+      stem: `因式分解：${a * b}x²+${a * c}x 提取公因式后的结果是`,
+      correct: `${a}x(${b}x+${c})`,
+      distractors: [
+        `${a}(${b}x+${c})`,
+        `${a}x(${b}x-${c})`,
+        `${b}x(${a}x+${c})`,
+      ],
+      explanation: `两项的公因式是 ${a}x，提取后得到 ${a}x(${b}x+${c})。`,
+    })
+  }
+
+  const completeSquare = () => {
+    const a = pickInt(rand, 2, 7)
+    return mkChoice({
+      stem: `因式分解：x²+${2 * a}x+${a * a} 可分解为`,
+      correct: `(x+${a})²`,
+      distractors: [`(x-${a})²`, `(x+${a})(x-${a})`, `x(x+${2 * a})+${a * a}`],
+      explanation: `符合完全平方公式 a²+2ab+b²=(a+b)²，所以 x²+${2 * a}x+${a * a}=(x+${a})²。`,
+    })
+  }
+
+  const templates =
+    difficulty === '基础'
+      ? [linearSimplify, monomialTimesPolynomial, commonFactor]
+      : difficulty === '提升'
+        ? [monomialTimesPolynomial, squareDifference, commonFactor, completeSquare]
+        : [linearSimplify, squareDifference, commonFactor, completeSquare]
+
+  const picked = templates[pickInt(rand, 0, templates.length - 1)]
+  return picked()
 }
 
 function quadraticFunctionQuestion(rand, id, textbookId, chapterId, difficulty) {
