@@ -188,24 +188,13 @@ function App() {
       setQuestionBankError('')
 
       try {
-        const [ocrReviewedModule, pdfWorkbookModule, xslRuleModule, questionGeneratorModule] =
-          await Promise.all([
-            import('./data/ocrReviewedQuestions.json'),
-            import('./data/pdfWorkbookQuestions.json'),
-            import('./data/xslRuleQuestions.json'),
-            import('./lib/questionGenerator'),
-          ])
+        const questionGeneratorModule = await import('./lib/questionGenerator')
 
         if (cancelled) return
 
         const generatedQuestions = questionGeneratorModule.buildGeneratedQuestions(DISPLAY_TEXTBOOKS, 100)
         const mergedQuestions = questionGeneratorModule.mergeQuestionBank(
-          [
-            ...curatedQuestions,
-            ...(ocrReviewedModule.default ?? []),
-            ...(pdfWorkbookModule.default ?? []),
-            ...(xslRuleModule.default ?? []),
-          ],
+          curatedQuestions,
           generatedQuestions,
         )
 
@@ -376,7 +365,7 @@ function App() {
     <div className="space-y-3">
       {questionBankLoading ? (
         <div className="rounded-2xl border border-primary/15 bg-softBlue px-4 py-2 text-sm font-semibold text-primary">
-          正在加载同步题库，请稍等片刻。
+          正在准备练习题，马上就好。
         </div>
       ) : null}
       {questionBankError ? (
