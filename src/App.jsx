@@ -192,7 +192,7 @@ function App() {
 
         if (cancelled) return
 
-        const generatedQuestions = questionGeneratorModule.buildGeneratedQuestions(DISPLAY_TEXTBOOKS, 100)
+        const generatedQuestions = questionGeneratorModule.buildGeneratedQuestions(DISPLAY_TEXTBOOKS, 20)
         const mergedQuestions = questionGeneratorModule.mergeQuestionBank(
           curatedQuestions,
           generatedQuestions,
@@ -427,6 +427,8 @@ function App() {
           onSubmitAttempt={handleSubmitAttempt}
           onAfterSubmit={() => setPage('wrong')}
           summary={summary}
+          questionBankLoading={questionBankLoading}
+          questionBankReady={questionBankReady}
         />,
         { suspense: false },
       )

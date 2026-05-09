@@ -204,6 +204,8 @@ export default function PracticePage({
   onSubmitAttempt,
   onAfterSubmit,
   summary,
+  questionBankLoading = false,
+  questionBankReady = false,
 }) {
   const [index, setIndex] = useState(0)
   const [selected, setSelected] = useState(null)
@@ -268,31 +270,38 @@ export default function PracticePage({
     let next = pickQuestions(baseParams)
     let nextHint = ''
 
-    if (next.length === 0 && !isAllChapters) {
-      next = pickQuestions({ ...baseParams, chapterId: null })
-      if (next.length) nextHint = '当前章节暂无符合条件题目，已自动切换为“本教材所有章节”。'
+    if (next.length === 0 && !isAllChapters && questionBankLoading) {
+      nextHint = '正在生成当前章节练习题，请稍等。'
     }
 
-    if (next.length === 0 && selection.source === 'XSL' && selection.difficulty) {
+    if (next.length === 0 && !questionBankLoading && selection.source === 'XSL' && selection.difficulty) {
       next = pickQuestions({ ...baseParams, difficulty: null })
       if (next.length) nextHint = 'XSL 当前按切题质量筛选，已自动忽略难度继续抽取 XSL 题。'
     }
 
-    if (selection.source === 'XSL_RULE' && next.length) {
-      nextHint = selection.difficulty ? 'XSL_RULE 题库按规则求解题抽取，已自动忽略难度筛选。' : nextHint
+    if (next.length === 0 && !questionBankLoading && selection.source === 'XSL_RULE' && selection.difficulty) {
+      next = pickQuestions({ ...baseParams, difficulty: null })
+      if (next.length) nextHint = 'XSL_RULE 题库按规则求解题抽取，已自动忽略难度筛选。'
     }
 
-    if (next.length === 0 && selection.source !== '全部' && selection.source !== 'XSL_RULE') {
+    if (next.length === 0 && !questionBankLoading && selection.source !== '全部' && selection.source !== 'XSL_RULE') {
       next = pickQuestions({ ...baseParams, chapterId: baseParams.chapterId, source: '全部' })
       if (next.length) nextHint = `当前题源“${sourceLabelMap[selection.source] ?? selection.source}”暂无题目，已自动放宽为“全部题源”。`
     }
 
-    if (next.length === 0 && selection.source !== '全部' && selection.source !== 'XSL_RULE' && !isAllChapters) {
-      next = pickQuestions({ ...baseParams, chapterId: null, source: '全部' })
-      if (next.length) nextHint = '当前筛选过窄，已自动放宽为“所有章节 + 全部来源”。'
+    if (next.length === 0 && !questionBankLoading && isAllChapters && selection.source !== 'XSL_RULE') {
+      next = pickQuestions({
+        questions: practiceQuestions,
+        textbookId: currentBook.id,
+        chapterId: null,
+        difficulty: null,
+        source: selection.source,
+        count: selection.questionCount,
+      })
+      if (next.length) nextHint = '已自动放宽为“本教材全部难度”。'
     }
 
-    if (next.length === 0 && selection.source !== 'XSL_RULE') {
+    if (next.length === 0 && !questionBankLoading && isAllChapters && selection.source !== 'XSL_RULE') {
       next = pickQuestions({
         questions: practiceQuestions,
         textbookId: currentBook.id,
@@ -304,7 +313,13 @@ export default function PracticePage({
       if (next.length) nextHint = '已自动放宽为“本教材全部难度 + 全部来源”。'
     }
 
-    if (next.length === 0 && selection.source === 'XSL_RULE') {
+    if (next.length === 0 && !questionBankLoading && !isAllChapters) {
+      nextHint = questionBankReady
+        ? '当前章节暂未入库符合条件的题目，请切换难度、来源，或选择“所有章节”。'
+        : '正在生成当前章节练习题，请稍等。'
+    }
+
+    if (next.length === 0 && !questionBankLoading && selection.source === 'XSL_RULE') {
       nextHint = 'XSL_RULE 当前章节暂未入库题目，请切换章节或选择“所有章节”。'
     }
 
@@ -333,6 +348,8 @@ export default function PracticePage({
     currentBook,
     currentChapter,
     isAllChapters,
+    questionBankLoading,
+    questionBankReady,
   ])
 
   const questionType = getQuestionType(current)
