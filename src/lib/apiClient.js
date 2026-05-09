@@ -3,7 +3,7 @@ const API_BASES = [
   import.meta.env.VITE_API_BACKUP_BASE_URL?.trim(),
 ].filter(Boolean)
 
-const REQUEST_TIMEOUT_MS = 12000
+const REQUEST_TIMEOUT_MS = 20000
 
 export function hasRemoteApi() {
   return API_BASES.length > 0

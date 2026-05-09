@@ -32,11 +32,15 @@ export function appendAttempt(attempts, payload) {
 
 export async function loadAttemptsForUser({ userId, token }) {
   if (hasRemoteApi() && token) {
-    const data = await requestJson('/api/attempts', {
-      method: 'GET',
-      token,
-    })
-    return Array.isArray(data.attempts) ? data.attempts : []
+    try {
+      const data = await requestJson('/api/attempts', {
+        method: 'GET',
+        token,
+      })
+      return Array.isArray(data.attempts) ? data.attempts : []
+    } catch {
+      return loadAttempts().filter((item) => item.userId === userId)
+    }
   }
 
   return loadAttempts().filter((item) => item.userId === userId)
@@ -44,12 +48,19 @@ export async function loadAttemptsForUser({ userId, token }) {
 
 export async function saveAttemptForUser({ payload, userId, token }) {
   if (hasRemoteApi() && token) {
-    const data = await requestJson('/api/attempts', {
-      method: 'POST',
-      token,
-      payload,
-    })
-    return data.attempt
+    try {
+      const data = await requestJson('/api/attempts', {
+        method: 'POST',
+        token,
+        payload,
+      })
+      return data.attempt
+    } catch {
+      const all = loadAttempts()
+      const attempt = createLocalAttempt({ ...payload, userId, syncStatus: 'pending' })
+      saveAttempts([...all, attempt])
+      return attempt
+    }
   }
 
   const all = loadAttempts()
